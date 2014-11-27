@@ -1,0 +1,31 @@
+<!-- INCLUDE overall_header.html -->
+
+<h1>{PBTG_TITLE_ACP}</h1>
+
+<p>{PBTG_EXPLAIN}</p>
+
+<form id="select_victim" method="post" action="{U_ACTION}">
+
+
+	<fieldset>
+		<legend>{L_PST_LEGEND4}</legend>
+	<dl>
+		<dt><label for="pst_words">{L_PST_WORDS}{L_COLON}</label><br /><span>{L_PST_WORDS_EXPLAIN}</span></dt>
+		<dd><input name="pst_words" id="pst_words" type="text" class="text medium" maxlength="255" value="{PST_WORDS}" /></dd>
+	</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{L_ACP_SUBMIT_CHANGES}</legend>
+	<p class="submit-buttons">
+		<input class="button1" type="submit" id="submit" name="submit" value="{L_SUBMIT}" />&nbsp;
+		<input class="button2" type="reset" id="reset" name="reset" value="{L_RESET}" />
+	</p>
+	{S_FORM_TOKEN}
+	</fieldset>
+
+<!-- ENDIF -->
+
+</form>
+
+<!-- INCLUDE overall_footer.html -->
