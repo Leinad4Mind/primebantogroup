@@ -14,7 +14,7 @@
 namespace wolfsblvt\primebantogroup\migrations;
 
 class v1_0_0_data_groups extends \phpbb\db\migration\migration
-{	
+{
 	protected $groups = array(
 		'BANNED_USERS',
 		'SUSPENDED_USERS',
@@ -23,15 +23,15 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 	
 	public static function depends_on()
 	{
-		return array('\wolfsblvt\primebantogroup\migrations\v1_0_0_configs');
+		return array('\wolfsblvt\primebantogroup\migrations\v1_0_0_data_add_ranks');
 	}
 	
 	public function effectively_installed()
 	{
-		$sql_query = 'SELECT COUNT(*) as total
+		$sql = 'SELECT COUNT(*) as total
 						FROM ' . GROUPS_TABLE . '
 						WHERE ' . $this->db->sql_in_set('group_name', $this->groups);
-		$result = $this->db->sql_query($sql_query);
+		$result = $this->db->sql_query($sql);
 		$total = (int) $this->db->sql_fetchfield('total');
 		$this->db->sql_freeresult($result);
 		
@@ -57,7 +57,7 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 	}
 	
 	/**
-	 * Adds the banned and suspended group to the groups table
+	 * Adds the banned, suspended and inactive group to the groups table
 	 * 
 	 * @return void
 	 */
@@ -65,6 +65,18 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 	{
 		if ($this->effectively_installed())
 			return true;
+		
+		// Retrieve IDs of the ranks for these groups
+		$sql = 'SELECT rank_id, rank_title
+						FROM ' . RANKS_TABLE . '
+						WHERE ' . $this->db->sql_in_set('rank_title', $this->groups);
+		$result = $this->db->sql_query($sql);
+		$ranks = array();
+		while ($row = $this->db->sql_fetchrow($result))
+		{
+			$ranks[$row['rank_title']] = $row['rank_id'];
+		}
+		$this->db->sql_freeresult($result);
 		
 		$group_data = array();
 		
@@ -74,6 +86,7 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 				'group_type' => 3,
 				'group_name' => $group_name,
 				'group_desc' => '',
+				'group_rank' => $ranks[$group_name],
 			);
 		}
 		
@@ -81,7 +94,7 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 	}
 	
 	/**
-	 * Summary of delete_groups
+	 * Removes the banned, suspended and inactive group from the groups table
 	 */
 	public function delete_groups()
 	{

@@ -1,352 +1,265 @@
 <?php
 /**
-*
-* Precise Similar Topics
-*
-* @copyright (c) 2013 Matt Friedman
-* @license GNU General Public License, version 2 (GPL-2.0)
-*
-*/
+ * 
+ * Prime Ban to Group
+ * 
+ * @copyright (c) 2014 Wolfsblut ( www.pinkes-forum.de )
+ * @license http://opensource.org/licenses/gpl-2.0.php GNU General Public License v2
+ * @author Clemens Husung (Wolfsblvt)
+ * 
+ * Original code by primehalo (https://www.phpbb.com/community/memberlist.php?mode=viewprofile&u=183323)
+ * Thanks to him for let me convert his MOD.
+ */
 
-namespace vse\similartopics\acp;
+namespace wolfsblvt\primebantogroup\acp;
 
-/**
-* @package acp
-*/
-class similar_topics_module
+class primebantogroup_module
 {
+	/** @var string The currenct action */
+	public $u_action;
+	
+	/** @var \phpbb\config\config */
+	public $new_config = array();
+	
+	/** @var string form key */
+	public $form_key;
+	
+	/** @var \wolfsblvt\primebantogroup\core\primebantogroup */
+	protected $primeban;
+	
 	/** @var \phpbb\config\config */
 	protected $config;
-
+	
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
-
-	/** @var \phpbb\request\request */
-	protected $request;
-
-	/** @var \phpbb\template\template */
-	protected $template;
-
+	
 	/** @var \phpbb\user */
 	protected $user;
-
-	/** @var ContainerBuilder */
-	protected $phpbb_container;
-
-	/** @var string */
-	protected $phpbb_root_path;
-
-	/** @var string */
-	protected $php_ext;
-
-	/** @var string */
-	protected $fulltext;
-
-	public $u_action;
-
+	
+	/** @var \phpbb\template\template */
+	protected $template;
+	
+	/** @var \phpbb\request\request */
+	protected $request;
+	
+	
 	public function main($id, $mode)
 	{
-
-		$this->config = $config;
-		$this->db = $db;
-		$this->request = $request;
-		$this->template = $template;
-		$this->user = $user;
-		$this->phpbb_container = $phpbb_container;
-		$this->phpbb_root_path = $phpbb_root_path;
-		$this->php_ext = $phpEx;
-		$this->fulltext = new \vse\similartopics\core\fulltext_support($this->db);
-
-		$this->tpl_name = 'acp_similar_topics';
-		$this->page_title = $this->user->lang('PST_TITLE_ACP');
-
-		$form_key = 'acp_similar_topics';
-		add_form_key($form_key);
-
-		$action = $this->request->variable('action', '');
-
-		switch ($action)
+		global $phpbb_container;
+		
+		// Initialization
+		$this->primeban		= $phpbb_container->get('wolfsblvt.primebantogroup.primebantogroup');
+		$this->config		= $phpbb_container->get('config');
+		$this->db			= $phpbb_container->get('dbal.conn');
+		$this->user			= $phpbb_container->get('user');
+		$this->template		= $phpbb_container->get('template');
+		$this->request		= $phpbb_container->get('request');
+		
+		$action = $this->request->variable('action', '', true);
+		$submit = ($this->request->is_set_post('submit')) ? true : false;
+		
+		$this->form_key = 'acp_primebantogroup';
+		add_form_key($this->form_key);
+		
+		#region Ajax actions
+		if ($action)
 		{
-			case 'advanced':
-				$forum_id = $this->request->variable('f', 0);
-
-				if ($this->request->is_set_post('submit'))
-				{
-					if (!check_form_key($form_key))
+			switch ($action)
+			{
+				case 'resync_groups':
+					if ($this->request->is_ajax())
 					{
-						trigger_error($user->lang('FORM_INVALID') . adm_back_link($this->u_action), E_USER_WARNING);
+						$this->primeban->resync_banned_groups();
+						// add_log('admin', 'LOG_PBTG_RESYNCED');
+						
+						trigger_error('PBTG_RESYNC_SUCCESS');
 					}
-
-					$similar_forums	= $this->request->variable('similar_forums_id', array(0));
-					$similar_forums_string = implode(',', $similar_forums);
-
-					$sql = 'UPDATE ' . FORUMS_TABLE . "
-						SET similar_topic_forums = '" . $this->db->sql_escape($similar_forums_string) . "'
-						WHERE forum_id = $forum_id";
-					$this->db->sql_query($sql);
-
-					$log = $this->phpbb_container->get('log');
-					$log->add('admin', $this->user->data['user_id'], $this->user->ip, 'PST_LOG_MSG');
-
-					trigger_error($this->user->lang('PST_SAVED') . adm_back_link($this->u_action));
-				}
-
-				$selected = array();
-				if ($forum_id > 0)
-				{
-					$sql = 'SELECT forum_name, similar_topic_forums
-						FROM ' . FORUMS_TABLE . "
-						WHERE forum_id = $forum_id";
-					$result = $this->db->sql_query($sql);
-					while ($fid = $this->db->sql_fetchrow($result))
+				break;
+					
+				default:
+					if ($this->request->is_ajax())
 					{
-						$selected = explode(',', trim($fid['similar_topic_forums']));
-						$forum_name = $fid['forum_name'];
+						trigger_error('PBTG_INVALID');
 					}
-					$this->db->sql_freeresult($result);
-				}
-
-				$this->template->assign_vars(array(
-					'S_ADVANCED_SETTINGS'		=> true,
-					'PST_VERSION'				=> isset($this->config['similar_topics_version']) ? 'v' . $this->config['similar_topics_version'] : false,
-					'SIMILAR_FORUMS_OPTIONS'	=> make_forum_select($selected, false, false, true),
-					'PST_FORUM_NAME'			=> $forum_name,
-					'PST_ADVANCED_EXP'			=> $this->user->lang('PST_ADVANCED_EXP', $forum_name),
-					'U_ACTION'					=> $this->u_action . '&amp;action=advanced&amp;f=' . $forum_id,
-					'U_BACK'					=> $this->u_action,
-				));
-			break;
-
-			default:
-				if ($this->request->is_set_post('submit'))
-				{
-					if (!check_form_key($form_key))
-					{
-						trigger_error($user->lang('FORM_INVALID') . adm_back_link($this->u_action), E_USER_WARNING);
-					}
-
-					$pst_enable = $this->request->variable('pst_enable', 0);
-					$this->config->set('similar_topics', $pst_enable);
-
-					$pst_limit = $this->request->variable('pst_limit', 0);
-					$this->config->set('similar_topics_limit', abs($pst_limit));
-
-					$pst_time_type = $this->request->variable('pst_time_type', '');
-					$this->config->set('similar_topics_type', $pst_time_type);
-
-					$pst_cache = $this->request->variable('pst_cache', 0);
-					$this->config->set('similar_topics_cache', abs($pst_cache));
-
-					$pst_ignore_forum = $this->request->variable('mark_ignore_forum', array(0), true);
-					$this->config->set('similar_topics_ignore', (sizeof($pst_ignore_forum)) ? implode(',', $pst_ignore_forum) : '');
-
-					$pst_noshow_forum = $this->request->variable('mark_noshow_forum', array(0), true);
-					$this->config->set('similar_topics_hide', (sizeof($pst_noshow_forum)) ? implode(',', $pst_noshow_forum) : '');
-
-					$pst_time = $this->request->variable('pst_time', 0);
-					$this->config->set('similar_topics_time', $this->set_pst_time($pst_time, $pst_time_type));
-
-					$pst_words = $this->request->variable('pst_words', '');
-					$this->config->set('similar_topics_words', $pst_words);
-
-					$log = $this->phpbb_container->get('log');
-					$log->add('admin', $this->user->data['user_id'], $this->user->ip, 'PST_LOG_MSG');
-
-					trigger_error($this->user->lang('PST_SAVED') . adm_back_link($this->u_action));
-				}
-
-				// Allow option to update the database to enable FULLTEXT support
-				if ($this->request->is_set_post('fulltext'))
-				{
-					if (!check_form_key($form_key))
-					{
-						trigger_error($user->lang('FORM_INVALID') . adm_back_link($this->u_action), E_USER_WARNING);
-					}
-
-					if (!$this->fulltext_support_enabled())
-					{
-						// Alter the database to support FULLTEXT
-						$this->enable_fulltext_support();
-
-						// Store the original database storage engine in a config var
-						$this->config->set('similar_topics_fulltext', (string) $this->fulltext->engine);
-
-						$log = $this->phpbb_container->get('log');
-						$log->add('admin', $this->user->data['user_id'], $this->user->ip, 'PST_LOG_FULLTEXT', time(), array(TOPICS_TABLE));
-
-						trigger_error($this->user->lang('PST_SAVE_FULLTEXT') . adm_back_link($this->u_action));
-					}
-				}
-
-				// Build the time options select menu
-				$time_options = array('d' => $this->user->lang('PST_DAYS'), 'w' => $this->user->lang('PST_WEEKS'), 'm' => $this->user->lang('PST_MONTHS'), 'y' => $this->user->lang('PST_YEARS'));
-				$s_time_options = '';
-				foreach ($time_options as $key => $value)
-				{
-					$selected = ($key == $this->config['similar_topics_type']) ? ' selected="selected"' : '';
-					$s_time_options .= '<option value="' . $key . '"' . $selected . '>' . $value . '</option>';
-				}
-
-				$this->template->assign_vars(array(
-					'S_PST_ENABLE'		=> isset($this->config['similar_topics']) ? $this->config['similar_topics'] : false,
-					'PST_LIMIT'			=> isset($this->config['similar_topics_limit']) ? $this->config['similar_topics_limit'] : '',
-					'PST_TIME'			=> $this->get_pst_time($this->config['similar_topics_time'], $this->config['similar_topics_type']),
-					'PST_CACHE'			=> isset($this->config['similar_topics_cache']) ? $this->config['similar_topics_cache'] : '',
-					'PST_WORDS'			=> isset($this->config['similar_topics_words']) ? $this->config['similar_topics_words'] : '',
-					'S_TIME_OPTIONS'	=> $s_time_options,
-					'PST_VERSION'		=> isset($this->config['similar_topics_version']) ? $this->config['similar_topics_version'] : '',
-					'S_PST_NO_SUPPORT'	=> !$this->fulltext_support_enabled(),
-					'S_PST_NO_MYSQL'	=> !$this->fulltext->is_mysql(),
-					'U_ACTION'			=> $this->u_action,
-				));
-
-				$ignore_forums = explode(',', trim($this->config['similar_topics_ignore']));
-				$noshow_forums = explode(',', trim($this->config['similar_topics_hide']));
-
-				$forum_list = $this->get_forum_list();
-				foreach ($forum_list as $row)
-				{
-					$this->template->assign_block_vars('forums', array(
-						'FORUM_NAME'			=> $row['forum_name'],
-						'FORUM_ID'				=> $row['forum_id'],
-						'CHECKED_IGNORE_FORUM'	=> (in_array($row['forum_id'], $ignore_forums)) ? 'checked="checked"' : '',
-						'CHECKED_NOSHOW_FORUM'	=> (in_array($row['forum_id'], $noshow_forums)) ? 'checked="checked"' : '',
-						'S_IS_ADVANCED'			=> $row['similar_topic_forums'] ? true : false,
-						'U_ADVANCED'			=> $this->u_action . '&amp;action=advanced&amp;f=' . $row['forum_id'],
-						'U_FORUM'				=> "{$this->phpbb_root_path}viewforum.$this->php_ext?f=" . $row['forum_id'],
-					));
-				}
-			break;
+			}
 		}
-	}
-
-	/**
-	* Get forums list
-	*
-	* @return array	forum data rows
-	* @access protected
-	*/
-	protected function get_forum_list()
-	{
-		$forum_list = array();
-
-		$sql = 'SELECT forum_id, forum_name, similar_topic_forums
-			FROM ' . FORUMS_TABLE . '
-			WHERE forum_type = ' .	FORUM_POST . '
-			ORDER BY left_id ASC';
-		$result = $this->db->sql_query($sql);
-		$forum_list = $this->db->sql_fetchrowset($result);
-		$this->db->sql_freeresult($result);
-
-		return $forum_list;
-	}
-
-	/**
-	* Calculate the $pst_time based on user input
-	*
-	* @param int $length user entered value
-	* @param string $type years, months, weeks, days
-	* @return int time in seconds
-	* @access protected
-	*/
-	protected function set_pst_time($length, $type = 'y')
-	{
-		$length = abs($length);
-		switch ($type)
+		#endregion
+		
+		$display_vars = array(
+			'title' => 'PBTG_TITLE_ACP',
+			'vars'    => array(
+				'legend1'										=> 'PBTG_SETTINGS',
+				'wolfsblvt.primebantogroup.resync'				=> array('lang' => 'PBTG_RESYNC',		'validate' => 'bool',		'type' => 'custom',					'explain' => true,	'method' => 'resync_groups'),
+				'wolfsblvt.primebantogroup.check_gc'			=> array('lang' => 'PBTG_CHECK',		'validate' => 'int:0',		'type' => 'number:0',				'explain' => true,	'append' => ' ' . $this->user->lang['SECONDS']),
+				'wolfsblvt.primebantogroup.inactive_group'		=> array('lang' => 'PBTG_ACT_INACTIVE',	'validate' => 'bool',		'type' => 'radio:enabled_disabled',	'explain' => true),
+				'legend2'										=> 'ACP_SUBMIT_CHANGES'
+			),
+		);
+		
+		$special_functions = array(
+			'wolfsblvt.primebantogroup.resync' => null,
+		);
+		
+		
+		#region Submit
+		if ($submit)
 		{
-			case 'y':
-				return ($length * 365 * 24 * 60 * 60);
-			break;
-
-			case 'm':
-				return (round($length * 30.4) * 24 * 60 * 60);
-			break;
-
-			case 'w':
-				return ($length * 7 * 24 * 60 * 60);
-			break;
-
-			case 'd':
-				return ($length * 24 * 60 * 60);
-			break;
+			$submit = $this->do_submit_stuff($display_vars, $special_functions);
+			
+			// If the submit was valid, so still submitted
+			if ($submit)
+			{
+				trigger_error($this->user->lang('CONFIG_UPDATED') . adm_back_link($this->u_action), E_USER_NOTICE);
+			}
 		}
+		#endregion
+		
+		$this->generate_stuff_for_cfg_template($display_vars);
+		
+		
+		// Output page template file
+		$this->tpl_name = 'acp_primebantogroup';
+		$this->page_title = $this->user->lang($display_vars['title']);
 	}
-
+	
 	/**
-	* Get the correct time $length value for the form
-	*
-	* @param int $time as a timestamp
-	* @param string $type years, months, weeks, days
-	* @return int time converted to the given $type
-	* @access protected
-	*/
-	protected function get_pst_time($time, $type)
+	 * Triggers resync for all groups used in primebantogroup.
+	 * 
+	 * @param string $value The value
+	 * @param string $key The key
+	 * @return string The formatted string of this item
+	 */
+	public function resync_groups($value, $key)
 	{
-		switch ($type)
-		{
-			case 'y':
-				$length = $time / (365 * 24 * 60 * 60);
-			break;
-
-			case 'm':
-				$length = round($time / (30.4 * 24 * 60 * 60));
-			break;
-
-			case 'w':
-				$length = $time / (7 * 24 * 60 * 60);
-			break;
-
-			case 'd':
-				$length = $time / (24 * 60 * 60);
-			break;
-
-			default:
-				$length = '';
-			break;
-		}
-		return (int) $length;
+		$action = append_sid($this->u_action, 'action=resync_groups');
+		return '<a href="' . $action . '" data-ajax="true"><input class="button2" type="submit" id="' . $key . '_enable" name="' . $key . '_enable" value="' . $this->user->lang['RUN'] . '" /></a>';
 	}
-
+	
+	
+	
 	/**
-	* Check for FULLTEXT index support
-	*
-	* @return bool True if FULLTEXT is fully supported, false otherwise
-	* @access protected
-	*/
-	protected function fulltext_support_enabled()
+	 * Abstracted method to do the submit part of the acp. Checks values, saves them
+	 * and displays the message.
+	 * If error happens, Error is shown and config not saved. (so this method quits and returns false.
+	 * 
+	 * @param array $display_vars The display vars for this acp site
+	 * @param array $special_functions Assoziative Array with config values where special functions should run on submit instead of simply save the config value. Array should contain 'config_value' => function ($this) { function code here }, or 'config_value' => null if no function should run.
+	 * @return bool Submit valid or not.
+	 */
+	protected function do_submit_stuff($display_vars, $special_functions = array())
 	{
-		if ($this->fulltext->engine()->supported())
+		$this->new_config = $this->config;
+		$cfg_array = ($this->request->is_set('config')) ? $this->request->variable('config', array('' => '')) : $this->new_config;
+		$error = isset($error) ? $error : array();
+		
+		validate_config_vars($display_vars['vars'], $cfg_array, $error);
+		
+		if (!check_form_key($this->form_key))
 		{
-			return $this->fulltext->index('topic_title');
+			$error[] = $this->user->lang['FORM_INVALID'];
 		}
+		
+		// Do not write values if there is an error
+		if (sizeof($error))
+		{
+			$submit = false;
+			return false;
+		}
+		
+		// We go through the display_vars to make sure no one is trying to set variables he/she is not allowed to...
+		foreach ($display_vars['vars'] as $config_name => $null)
+		{
+			// We want to skip that, or run the function. (We do this before checking if there is a request value set for it,
+			// cause maybe we want to run a function anyway, based on whatever. We can check stuff manually inside this function)
+			if (is_array($special_functions) && array_key_exists($config_name, $special_functions))
+			{
+				$func = $special_functions[$config_name];
+				if (isset($func) && is_callable($func))
+					$func();
+				
+				continue;
+			}
+			
+			if (!isset($cfg_array[$config_name]) || strpos($config_name, 'legend') !== false)
+			{
+				continue;
+			}
 
-		return false;
+			// Sets the config value
+			$this->new_config[$config_name] = $cfg_array[$config_name];
+			$this->config->set($config_name, $cfg_array[$config_name]);
+		}
+		
+		return true;
 	}
-
+	
 	/**
-	* Enable FULLTEXT support for the topic_title
-	*
-	* @return null
-	* @access protected
-	*/
-	protected function enable_fulltext_support()
+	 * Abstracted method to generate acp configuration pages out of a list of display vars, using
+	 * the function build_cfg_template().
+	 * Build configuration template for acp configuration pages
+	 * 
+	 * @param array $display_vars The display vars for this acp site
+	 */
+	protected function generate_stuff_for_cfg_template($display_vars)
 	{
-		if (!$this->fulltext->is_mysql())
+		$this->new_config = $this->config;
+		$cfg_array = ($this->request->is_set('config')) ? $this->request->variable('config', array('' => '')) : $this->new_config;
+		$error = isset($error) ? $error : array();
+		
+		validate_config_vars($display_vars['vars'], $cfg_array, $error);
+		
+		foreach ($display_vars['vars'] as $config_key => $vars)
 		{
-			trigger_error($this->user->lang('PST_NO_MYSQL') . adm_back_link($this->u_action), E_USER_WARNING);
+			if (!is_array($vars) && strpos($config_key, 'legend') === false)
+			{
+				continue;
+			}
+			
+			if (strpos($config_key, 'legend') !== false)
+			{
+				$this->template->assign_block_vars('options', array(
+					'S_LEGEND'		=> true,
+					'LEGEND'		=> (isset($this->user->lang[$vars])) ? $this->user->lang[$vars] : $vars)
+				);
+				
+				continue;
+			}
+			
+			$type = explode(':', $vars['type']);
+			
+			$l_explain = '';
+			if ($vars['explain'] && isset($vars['lang_explain']))
+			{
+				$l_explain = (isset($this->user->lang[$vars['lang_explain']])) ? $this->user->lang[$vars['lang_explain']] : $vars['lang_explain'];
+			}
+			else if ($vars['explain'])
+			{
+				$l_explain = (isset($this->user->lang[$vars['lang'] . '_EXPLAIN'])) ? $this->user->lang[$vars['lang'] . '_EXPLAIN'] : '';
+			}
+			
+			$content = build_cfg_template($type, $config_key, $this->new_config, $config_key, $vars);
+			
+			if (empty($content))
+			{
+				continue;
+			}
+			
+			$this->template->assign_block_vars('options', array(
+				'KEY'				=> $config_key,
+				'TITLE'				=> (isset($this->user->lang[$vars['lang']])) ? $this->user->lang[$vars['lang']] : $vars['lang'],
+				'S_EXPLAIN'			=> $vars['explain'],
+				'TITLE_EXPLAIN'		=> $l_explain,
+				'CONTENT'			=> $content,
+			));
+			
+			//unset($display_vars['vars'][$config_key]);
 		}
-
-		// Alter the storage engine
-		$sql = 'ALTER TABLE ' . TOPICS_TABLE . ' ENGINE = MYISAM';
-		$this->db->sql_query($sql);
-
-		// Prevent adding extra indeces.
-		if ($this->fulltext->index('topic_title'))
-		{
-			return;
-		}
-
-		$sql = 'ALTER TABLE ' . TOPICS_TABLE . ' ADD FULLTEXT (topic_title)';
-		$this->db->sql_query($sql);
+		
+		$this->template->assign_vars(array(
+			'S_ERROR'			=> (sizeof($error)) ? true : false,
+			'ERROR_MSG'			=> implode('<br />', $error),
+			
+			'U_ACTION'			=> $this->u_action)
+		);
 	}
 }

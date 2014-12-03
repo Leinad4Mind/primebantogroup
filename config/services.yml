@@ -12,6 +12,7 @@ services:
     wolfsblvt.primebantogroup.primebantogroup:
         class: wolfsblvt\primebantogroup\core\primebantogroup
         arguments:
+            - @config
             - @dbal.conn
             - @user
             - %core.root_path%
@@ -26,17 +27,5 @@ services:
             - %core.php_ext%
         calls:
             - [set_name, [cron.task.wolfsblvt.primebantogroup.check_primebantogroup]]
-        tags:
-            - { name: cron.task }
-    cron.task.wolfsblvt.primebantogroup.resync_banned_groups:
-        class: wolfsblvt\primebantogroup\cron\task\cron_task_resync_banned_groups
-        arguments:
-            - @wolfsblvt.primebantogroup.primebantogroup
-            - @dbal.conn
-            - @config
-            - %core.root_path%
-            - %core.php_ext%
-        calls:
-            - [set_name, [cron.task.wolfsblvt.primebantogroup.resync_banned_groups]]
         tags:
             - { name: cron.task }

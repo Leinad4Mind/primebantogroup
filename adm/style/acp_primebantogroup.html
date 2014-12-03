@@ -1,31 +1,45 @@
 <!-- INCLUDE overall_header.html -->
 
-<h1>{PBTG_TITLE_ACP}</h1>
+<a id="maincontent"></a>
 
-<p>{PBTG_EXPLAIN}</p>
+<h1>{L_PBTG_TITLE}</h1>
 
-<form id="select_victim" method="post" action="{U_ACTION}">
+<p>{L_PBTG_TITLE_EXPLAIN}</p>
 
+<!-- IF S_ERROR -->
+	<div class="errorbox">
+		<h3>{L_WARNING}</h3>
+		<p>{ERROR_MSG}</p>
+	</div>
+<!-- ENDIF -->
 
-	<fieldset>
-		<legend>{L_PST_LEGEND4}</legend>
-	<dl>
-		<dt><label for="pst_words">{L_PST_WORDS}{L_COLON}</label><br /><span>{L_PST_WORDS_EXPLAIN}</span></dt>
-		<dd><input name="pst_words" id="pst_words" type="text" class="text medium" maxlength="255" value="{PST_WORDS}" /></dd>
-	</dl>
-	</fieldset>
+<form id="acp_primebantogroup" method="post" action="{U_ACTION}">
+	
+	<input class="button1" type="submit" id="submit_real" name="submit" value="{L_SUBMIT}" style="display:none;" />
 
-	<fieldset>
-		<legend>{L_ACP_SUBMIT_CHANGES}</legend>
+<!-- BEGIN options -->
+	<!-- IF options.S_LEGEND -->
+		<!-- IF not options.S_FIRST_ROW -->
+			</fieldset>
+		<!-- ENDIF -->
+		<fieldset>
+			<legend>{options.LEGEND}</legend>
+	<!-- ELSE -->
+
+		<dl>
+			<dt><label for="{options.KEY}">{options.TITLE}{L_COLON}</label><!-- IF options.S_EXPLAIN --><br /><span>{options.TITLE_EXPLAIN}</span><!-- ENDIF --></dt>
+			<dd>{options.CONTENT}</dd>
+		</dl>
+
+	<!-- ENDIF -->
+<!-- END options -->
+
 	<p class="submit-buttons">
 		<input class="button1" type="submit" id="submit" name="submit" value="{L_SUBMIT}" />&nbsp;
 		<input class="button2" type="reset" id="reset" name="reset" value="{L_RESET}" />
 	</p>
 	{S_FORM_TOKEN}
-	</fieldset>
-
-<!-- ENDIF -->
-
+</fieldset>
 </form>
 
 <!-- INCLUDE overall_footer.html -->
