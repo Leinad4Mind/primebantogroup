@@ -17,10 +17,10 @@ class primebantogroup
 {
 	/** @var \phpbb\config\config */
 	protected $config;
-	
+
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
-	
+
 	/** @var \phpbb\user */
 	protected $user;
 
@@ -29,8 +29,7 @@ class primebantogroup
 
 	/** @var string PHP file extension */
 	protected $php_ext;
-	
-	
+
 	/** @internal readonly! */
 	public $BANNED_GROUP_NAME = 'BANNED_USERS';
 	public $SUSPENDED_GROUP_NAME = 'SUSPENDED_USERS';
@@ -54,10 +53,10 @@ class primebantogroup
 		$this->user = $user;
 		$this->root_path = $root_path;
 		$this->php_ext = $php_ext;
-		
+
 		$this->ext_root_path = 'ext/wolfsblvt/primebantogroup';
 	}
-	
+
 	/**
 	 * Primary function to add and remove users from banned group
 	 * 
@@ -153,7 +152,7 @@ class primebantogroup
 
 		return $group_data;
 	}
-	
+
 	/**
 	 * Resyncs all used groups. Remove and adds users wich are no longer valid or should be.
 	 * 
@@ -162,13 +161,13 @@ class primebantogroup
 	function resync_banned_groups()
 	{
 		$config_inactive = $this->config['wolfsblvt.primebantogroup.inactive_group'];
-		
+
 		// Remove users from groups wich are unbanned
 		$this->ban_to_group(null, 'unban');
-		
+
 		// Remove users wich are no more inactive
 		$inactive_group = $this->get_group_data($this->INACTIVE_GROUP_NAME);
-		
+
 		if (!empty($inactive_group))
 		{
 			$sql = 'SELECT ug.user_id, u.user_type, u.username
@@ -186,22 +185,20 @@ class primebantogroup
 				}
 			}
 			$this->db->sql_freeresult($result);
-		
+
 			$this->group_inactive_users($data['user_ids'], 'remove', $data['usernames']);
 		}
 
-		
-		
 		// Lets make one thing sure first. I'll not check if users are already in the group and will be added again in this function.
 		// The phpBB group_user_add function checks that anyway, so no need here.
 		// Why would you do work twice? (:		
-		
+
 		$users_to_groups = array(
 			$this->BANNED_GROUP_NAME		=> array('user_ids' => array(), 'usernames' => array()),
 			$this->SUSPENDED_GROUP_NAME		=> array('user_ids' => array(), 'usernames' => array()),
 			$this->INACTIVE_GROUP_NAME		=> array('user_ids' => array(), 'usernames' => array()),
 		);
-		
+
 		// Get the users that needs to be added in groups
 		$sql = 'SELECT u.user_id, u.username, u.user_type, b.ban_userid, b.ban_end
 				FROM ' . USERS_TABLE . ' u
@@ -223,7 +220,7 @@ class primebantogroup
 			{
 				$group = $this->INACTIVE_GROUP_NAME;
 			}
-			
+
 			if ($group)
 			{
 				$users_to_groups[$group]['user_ids'][] = $row['user_id'];
@@ -231,21 +228,21 @@ class primebantogroup
 			}
 		}
 		$this->db->sql_freeresult($result);
-		
+
 		// Add inacitve users (if wished)
 		$data = $users_to_groups[$this->INACTIVE_GROUP_NAME];
 		if ($config_inactive && !empty($data['user_ids']))
 		{
 			$this->group_inactive_users($data['user_ids'], 'add', $data['usernames']);
 		}
-		
+
 		// Add fully banned users
 		$data = $users_to_groups[$this->BANNED_GROUP_NAME];
 		if (!empty($data['user_ids']))
 		{
 			$this->ban_to_group($data['user_ids'], 0, 'user', $data['usernames']);
 		}
-		
+
 		// Add suspended users
 		$data = $users_to_groups[$this->SUSPENDED_GROUP_NAME];
 		if (!empty($data['user_ids']))
@@ -253,7 +250,7 @@ class primebantogroup
 			$this->ban_to_group($data['user_ids'], 1, 'user', $data['usernames']);
 		}
 	}
-	
+
 	/**
 	 * Add user(s) to group
 	 * 
@@ -267,7 +264,7 @@ class primebantogroup
 		// include for function
 		if(!function_exists('group_user_add'))
 			include($this->root_path . 'includes/functions_user.' . $this->php_ext);
-		
+
 		$group_data	= $this->get_group_data($group_name);
 		$group_id	= isset($group_data['group_id']) ? $group_data['group_id'] : null;
 		if (!empty($group_id))
@@ -278,7 +275,6 @@ class primebantogroup
 		}
 		return false;
 	}
-
 
 	/**
 	 * Remove a user/s from a given group. When we remove users we update their
@@ -295,7 +291,7 @@ class primebantogroup
 		// include for function
 		if(!function_exists('group_user_del'))
 			include($this->root_path . 'includes/functions_user.' . $this->php_ext);
-		
+
 		$group_data	= $this->get_group_data($group_name);
 		$group_id	= isset($group_data['group_id']) ? (int)$group_data['group_id'] : null;
 		if (!empty($group_id))

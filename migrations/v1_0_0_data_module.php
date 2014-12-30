@@ -19,7 +19,7 @@ class v1_0_0_data_module extends \phpbb\db\migration\migration
 	{
 		return array('\wolfsblvt\primebantogroup\migrations\v1_0_0_data_groups');
 	}
-	
+
 	public function update_data()
 	{
 		return array(

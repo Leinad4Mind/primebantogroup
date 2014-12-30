@@ -40,19 +40,19 @@ if (empty($lang) || !is_array($lang))
 $lang = array_merge($lang, array(
 	'PBTG_TITLE_ACP'				=> 'Prime Ban to Group',
 	'PBTG_SETTINGS_ACP'				=> 'Einstellungen',
-	
+
 	'PBTG_TITLE'					=> 'Prime Ban to Group',
 	'PBTG_TITLE_EXPLAIN'			=> 'Fügt Benutzer automatisch in Spezialgruppen hinzu, wenn sie temporär oder dauerhaft gebannt werden. Dies ermöglicht die visuelle Hervorhebung ihres Status durch Gruppen-Eigenschaften, wie zum Beispiel ein eigenes Rang-Bild. User werden aus dieser Gruppe entfernt, wenn sie manuell entbannt werden oder wenn ihr Bann endet. Benutzer, die zum Zeitpunkt der Installation dieser Erweiterung von schon gebannt sind, können ganz einfach den entsprechenden Gruppen zugewiesen werden, wenn du die Gruppen resynchronisierst.',
-	
+
 	'PBTG_SETTINGS'					=> 'Prime Ban to Group Einstellungen',
-	
+
 	'PBTG_RESYNC'					=> 'Resynchronisiere Gruppen',
 	'PBTG_RESYNC_EXPLAIN'			=> 'Resynchronisiert die Grouppen der gebannten, suspendierten und inaktiven Benutzer. Alle User, die nicht in diese Gruppen gehören werden entfernt, und alle, die dort hineingehören, werden hinzugefügt. Führe diese Aktion aus nachdem du die Gruppe der inaktiven Benutzer aktivierst oder deaktiviert hast, und beim ersten Aktivieren dieser Erweiterung, oder nachdem du sie temporär deaktiviert hast.',
 	'PBTG_CHECK'					=> 'Intervall des Cron Tasks zur Gruppenüberprüfung',
 	'PBTG_CHECK_EXPLAIN'			=> 'Setzt das Intervall des Cron Tasks, der überprüft ob gebannte User aus der Gruppe entfernt oder hinzugefügt werden müssen. (Standard: 600)',
 	'PBTG_ACT_INACTIVE'				=> 'Aktiviere Gruppe für inaktive User',
 	'PBTG_ACT_INACTIVE_EXPLAIN'		=> 'Aktiviert die Gruppe für inaktive User. Bitte beachte, wenn du diese Einstellung geändert wird und die aktuellen User der Gruppe entsprechen sollen, so müssen die Gruppen neu synchronisiert werden.',
-	
+
 	'PBTG_RESYNC_SUCCESS'			=> 'Resynchronisierung wurde erfolgreich durchgeführt.',
 	'PBTG_INVALID'					=> 'Ungültige Aktion.',
 ));

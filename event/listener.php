@@ -32,6 +32,9 @@ class listener implements EventSubscriberInterface
 	/** @var \phpbb\user */
 	protected $user;
 
+	/** @var \phpbb\cache\service */
+	protected $cache;
+
 	/** @var string phpEx */
 	protected $php_ext;
 
@@ -44,12 +47,13 @@ class listener implements EventSubscriberInterface
 	 * @param \phpbb\user											$user			User object
 	 * @param string												$php_ext		phpEx
 	 */
-	public function __construct(\wolfsblvt\primebantogroup\core\primebantogroup $primeban, \phpbb\path_helper $path_helper, \phpbb\template\template $template, \phpbb\user $user, $php_ext)
+	public function __construct(\wolfsblvt\primebantogroup\core\primebantogroup $primeban, \phpbb\path_helper $path_helper, \phpbb\template\template $template, \phpbb\user $user, \phpbb\cache\service $cache, $php_ext)
 	{
 		$this->primeban = $primeban;
 		$this->path_helper = $path_helper;
 		$this->template = $template;
 		$this->user = $user;
+		$this->cache = $cache;
 		$this->php_ext = $php_ext;
 		$this->ext_root_path = 'ext/wolfsblvt/primebantogroup';
 	}
@@ -83,7 +87,7 @@ class listener implements EventSubscriberInterface
 			'T_EXT_PRIMEBANTOGROUP_THEME_PATH'			=> $this->path_helper->get_web_root_path() . $this->ext_root_path . '/styles/' . $this->user->style['style_path'] . '/theme',
 		));
 	}
-	
+
 	/**
 	 * Adds the language var to get group names
 	 * 
@@ -95,7 +99,7 @@ class listener implements EventSubscriberInterface
 		// Add language vars
 		$this->user->add_lang_ext('wolfsblvt/primebantogroup', 'primebantogroup');
 	}
-	
+
 	/**
 	 * Adds the language translation for user ranks
 	 * 
@@ -106,17 +110,22 @@ class listener implements EventSubscriberInterface
 	{
 		global $ranks;
 		$user_data = $event['user_data'];
-		
+
+		if (empty($ranks))
+		{
+			$ranks = $this->cache->obtain_ranks();
+		}
+
 		if (!empty($user_data['user_rank']))
 		{
 			$rank_name = $ranks['special'][$user_data['user_rank']]['rank_title'];
-			
+
 			if(in_array($rank_name, array($this->primeban->BANNED_GROUP_NAME, $this->primeban->SUSPENDED_GROUP_NAME, $this->primeban->INACTIVE_GROUP_NAME)))
-				$ranks['special'][$user_data['user_rank']]['rank_title'] = $this->user->lang['G_' . $rank_name];
+				$ranks['special'][$user_data['user_rank']]['rank_title'] = $this->user->lang['R_' . $rank_name];
 		}
 
 	}
-	
+
 	/**
 	 * Runs the prime ban code if a user is banned
 	 * 
@@ -127,7 +136,7 @@ class listener implements EventSubscriberInterface
 	{
 		if($event['mode'] != 'user')
 			return;
-		
+
 		$this->primeban->ban_to_group(false, $event['ban_length'], $event['mode'], $event['ban']);
 	}
 }

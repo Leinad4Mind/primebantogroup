@@ -14,10 +14,10 @@ class cron_task_check_primebantogroup extends \phpbb\cron\task\base
 {
 	/** @var \wolfsblvt\primebantogroup\core\primebantogroup */
 	protected $primeban;
-	
+
 	/** @var \phpbb\db\driver\driver_interface */
 	protected $db;
-	
+
 	/** @var \phpbb\config\config */
 	protected $config;
 
@@ -44,10 +44,10 @@ class cron_task_check_primebantogroup extends \phpbb\cron\task\base
 		$this->config = $config;
 		$this->root_path = $root_path;
 		$this->php_ext = $php_ext;
-		
+
 		$this->ext_root_path = 'ext/wolfsblvt/primebantogroup';
 	}
-	
+
 	/**
 	 * Runs this cron task.
 	 *
@@ -56,26 +56,29 @@ class cron_task_check_primebantogroup extends \phpbb\cron\task\base
 	public function run()
 	{
 		$this->config->set('wolfsblvt.primebantogroup.check_last_gc', time());
-		
+
 		// Remove users from groups wich are unbanned
 		$this->primeban->ban_to_group(null, 'unban');
-		
+
 		// Check for inactive users
 		$config_inactive = $this->config['wolfsblvt.primebantogroup.inactive_group'];
 		if($config_inactive)
 		{
 			$inactive_group_id = $this->primeban->get_group_data($this->primeban->INACTIVE_GROUP_NAME)['group_id'];
-			
+
 			$sql = 'SELECT ug.user_id, u.user_type, u.username
 				FROM ' . USERS_TABLE . ' u
 				LEFT JOIN ' . USER_GROUP_TABLE . " ug ON (ug.user_id = u.user_id AND ug.group_id = $inactive_group_id)
 				WHERE (
 					ug.group_id = $inactive_group_id
-						AND u.user_type <> " . USER_INACTIVE . '
+						AND u.user_type <> " . USER_INACTIVE . "
 					)
-					OR u.user_type = ' . USER_INACTIVE;
+					OR (
+						ug.group_id <> $inactive_group_id
+							AND u.user_type = " . USER_INACTIVE . '
+					)';
 			$result = $this->db->sql_query($sql);
-			
+
 			$data = array(
 				'add'		=> array('user_ids' => array(), 'usernames' => array()),
 				'remove'	=> array('user_ids' => array(), 'usernames' => array()),
@@ -83,17 +86,17 @@ class cron_task_check_primebantogroup extends \phpbb\cron\task\base
 			while ($row = $this->db->sql_fetchrow($result))
 			{
 				$action = ($row['user_type'] == USER_INACTIVE) ? 'add' : 'remove';
-				
+
 				$data[$action]['user_ids'][] = $row['user_id'];
 				$data[$action]['usernames'][] = $row['username'];
 			}
 			$this->db->sql_freeresult($result);
-			
+
 			$this->primeban->group_inactive_users($data['add']['user_ids'], 'add', $data['add']['usernames']);
 			$this->primeban->group_inactive_users($data['remove']['user_ids'], 'remove', $data['remove']['usernames']);
 		}
 	}
-	
+
 	/**
 	 * Returns whether this cron task can run, given current board configuration.
 	 *
@@ -103,7 +106,7 @@ class cron_task_check_primebantogroup extends \phpbb\cron\task\base
 	{
 		return (bool) $this->config['wolfsblvt.primebantogroup.check_gc'] > 0;
 	}
-	
+
 	/**
 	 * Returns whether this cron task should run now, because enough time
 	 * has passed since it was last run.

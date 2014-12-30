@@ -20,12 +20,12 @@ class v1_0_0_data_add_ranks extends \phpbb\db\migration\migration
 		'SUSPENDED_USERS',
 		'INACTIVE_USERS',
 	);
-	
+
 	public static function depends_on()
 	{
 		return array('\wolfsblvt\primebantogroup\migrations\v1_0_0_configs');
 	}
-	
+
 	public function effectively_installed()
 	{
 		$sql = 'SELECT COUNT(*) as total
@@ -34,10 +34,10 @@ class v1_0_0_data_add_ranks extends \phpbb\db\migration\migration
 		$result = $this->db->sql_query($sql);
 		$total = (int) $this->db->sql_fetchfield('total');
 		$this->db->sql_freeresult($result);
-		
+
 		return ($total == count($this->ranks));
 	}
-	
+
 	public function update_data()
 	{
 		return array(
@@ -55,7 +55,7 @@ class v1_0_0_data_add_ranks extends \phpbb\db\migration\migration
 			)),
 		);
 	}
-	
+
 	/**
 	 * Adds the banned, suspended and inactive rank to the ranks table
 	 * 
@@ -65,9 +65,9 @@ class v1_0_0_data_add_ranks extends \phpbb\db\migration\migration
 	{
 		if ($this->effectively_installed())
 			return true;
-		
+
 		$rank_data = array();
-		
+
 		foreach ($this->ranks as $rank_name)
 		{
 			$rank_data[] = array(
@@ -76,10 +76,10 @@ class v1_0_0_data_add_ranks extends \phpbb\db\migration\migration
 				'rank_image' => '../../ext/wolfsblvt/primebantogroup/images/ranks/' . strtolower($rank_name) . '.png',
 			);
 		}
-		
+
 		$this->db->sql_multi_insert(RANKS_TABLE, $rank_data);
 	}
-	
+
 	/**
 	 * Removes the banned, suspended and inactive rank from the ranks table
 	 */
@@ -89,7 +89,7 @@ class v1_0_0_data_add_ranks extends \phpbb\db\migration\migration
 					WHERE ' . $this->db->sql_in_set('rank_title', $this->ranks);
 		$result = $this->db->sql_query($sql);
 		$this->db->sql_freeresult($result);
-		
+
 		return true;
 	}
 }

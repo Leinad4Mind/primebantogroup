@@ -3,8 +3,8 @@
 	"type": "phpbb-extension",
 	"description": "Automatically moves users into a special group when they are banned or suspended. This allows you to visually indicate their status through the use of group attributes, such as a custom rank image. Users will be removed from the group when they are manually unbanned or when their temporary ban has ended. Users who are already banned or suspended when this extension is installed can be moved to the group if you resync the groups.",
 	"homepage": "http://pinkes-forum.de/dev/find.php?ext=primebantogroup",
-	"version": "1.0.1",
-	"time": "2014-12-08",
+	"version": "1.0.2",
+	"time": "2014-12-30",
 	"keywords": ["phpbb", "extension", "primebantogroup", "ban", "group"],
 	"license": "GPL-2.0",
 	"authors": [

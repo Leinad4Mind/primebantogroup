@@ -39,8 +39,12 @@ if (empty($lang) || !is_array($lang))
 
 $lang = array_merge($lang, array(
 	'PBTG_EXT_NAME'				=> 'Prime Ban to Group',
-	
+
 	'G_SUSPENDED_USERS'			=> 'Suspendierte Benutzer',
 	'G_BANNED_USERS'			=> 'Gebannte Benutzer',
 	'G_INACTIVE_USERS'			=> 'Inaktive Benutzer',
+
+	'R_SUSPENDED_USERS'			=> 'Suspendierter Benutzer',
+	'R_BANNED_USERS'			=> 'Gebannter Benutzer',
+	'R_INACTIVE_USERS'			=> 'Inaktiver Benutzer',
 ));

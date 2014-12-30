@@ -20,12 +20,12 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 		'SUSPENDED_USERS',
 		'INACTIVE_USERS',
 	);
-	
+
 	public static function depends_on()
 	{
 		return array('\wolfsblvt\primebantogroup\migrations\v1_0_0_data_add_ranks');
 	}
-	
+
 	public function effectively_installed()
 	{
 		$sql = 'SELECT COUNT(*) as total
@@ -34,10 +34,10 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 		$result = $this->db->sql_query($sql);
 		$total = (int) $this->db->sql_fetchfield('total');
 		$this->db->sql_freeresult($result);
-		
+
 		return ($total == count($this->groups));
 	}
-	
+
 	public function update_data()
 	{
 		return array(
@@ -55,7 +55,7 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 			)),
 		);
 	}
-	
+
 	/**
 	 * Adds the banned, suspended and inactive group to the groups table
 	 * 
@@ -65,7 +65,7 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 	{
 		if ($this->effectively_installed())
 			return true;
-		
+
 		// Retrieve IDs of the ranks for these groups
 		$sql = 'SELECT rank_id, rank_title
 						FROM ' . RANKS_TABLE . '
@@ -77,9 +77,9 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 			$ranks[$row['rank_title']] = $row['rank_id'];
 		}
 		$this->db->sql_freeresult($result);
-		
+
 		$group_data = array();
-		
+
 		foreach ($this->groups as $group_name)
 		{
 			$group_data[] = array(
@@ -89,10 +89,10 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 				'group_rank' => $ranks[$group_name],
 			);
 		}
-		
+
 		$this->db->sql_multi_insert(GROUPS_TABLE, $group_data);
 	}
-	
+
 	/**
 	 * Removes the banned, suspended and inactive group from the groups table
 	 */
@@ -101,7 +101,7 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 		// include for function
 		if(!function_exists('group_delete'))
 			include($this->phpbb_root_path . 'includes/functions_user.' . $this->php_ext);
-		
+
 		// Get the group_ids
 		$sql = 'SELECT group_id, group_name
 					FROM ' . GROUPS_TABLE . '
@@ -113,13 +113,13 @@ class v1_0_0_data_groups extends \phpbb\db\migration\migration
 			$group_data[] = $row;
 		}
 		$this->db->sql_freeresult($result);
-		
+
 		if(empty($group_data))
 			return true;
-		
+
 		// Delete group by group and start migration again if needed, to prevent timeouts
 		group_delete($group_data[0]['group_id'], $group_data[0]['group_name']);
-		
+
 		return (count($group_data) > 1) ? false : true;
 	}
 }
