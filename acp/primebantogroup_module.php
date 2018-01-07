@@ -49,8 +49,8 @@ class primebantogroup_module
 		// Initialization
 		$this->primeban		= $phpbb_container->get('wolfsblvt.primebantogroup.primebantogroup');
 		$this->config		= $phpbb_container->get('config');
-		$this->db			= $phpbb_container->get('dbal.conn');
-		$this->user			= $phpbb_container->get('user');
+		$this->db		= $phpbb_container->get('dbal.conn');
+		$this->user		= $phpbb_container->get('user');
 		$this->template		= $phpbb_container->get('template');
 		$this->request		= $phpbb_container->get('request');
 
@@ -87,11 +87,11 @@ class primebantogroup_module
 		$display_vars = array(
 			'title' => 'PBTG_TITLE_ACP',
 			'vars'    => array(
-				'legend1'										=> 'PBTG_SETTINGS',
-				'wolfsblvt.primebantogroup.resync'				=> array('lang' => 'PBTG_RESYNC',		'validate' => 'bool',		'type' => 'custom',					'explain' => true,	'method' => 'resync_groups'),
-				'wolfsblvt.primebantogroup.check_gc'			=> array('lang' => 'PBTG_CHECK',		'validate' => 'int:0',		'type' => 'number:0',				'explain' => true,	'append' => ' ' . $this->user->lang['SECONDS']),
+				'legend1'						=> 'PBTG_SETTINGS',
+				'wolfsblvt.primebantogroup.resync'			=> array('lang' => 'PBTG_RESYNC',	'validate' => 'bool',		'type' => 'custom',			'explain' => true,	'method' => 'resync_groups'),
+				'wolfsblvt.primebantogroup.check_gc'			=> array('lang' => 'PBTG_CHECK',	'validate' => 'int:0',		'type' => 'number:0',			'explain' => true,	'append' => ' ' . $this->user->lang['SECONDS']),
 				'wolfsblvt.primebantogroup.inactive_group'		=> array('lang' => 'PBTG_ACT_INACTIVE',	'validate' => 'bool',		'type' => 'radio:enabled_disabled',	'explain' => true),
-				'legend2'										=> 'ACP_SUBMIT_CHANGES'
+				'legend2'						=> 'ACP_SUBMIT_CHANGES'
 			),
 		);
 
@@ -243,7 +243,7 @@ class primebantogroup_module
 				'KEY'				=> $config_key,
 				'TITLE'				=> (isset($this->user->lang[$vars['lang']])) ? $this->user->lang[$vars['lang']] : $vars['lang'],
 				'S_EXPLAIN'			=> $vars['explain'],
-				'TITLE_EXPLAIN'		=> $l_explain,
+				'TITLE_EXPLAIN'			=> $l_explain,
 				'CONTENT'			=> $content,
 			));
 
